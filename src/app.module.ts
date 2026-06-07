@@ -8,6 +8,7 @@ import { ReminderModule } from './reminder/reminder.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { MeetingReminder } from './meeting-reminders/entities/meeting-reminder.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { MeetingReminder } from './meeting-reminders/entities/meeting-reminder.e
     }),
     DiscordModule,
     ReminderModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
