@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entities/user.entity';
 import { MeetingReminder } from './meeting-reminders/entities/meeting-reminder.entity';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuthModule } from './auth/auth.module';
     DiscordModule,
     ReminderModule,
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
