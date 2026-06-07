@@ -6,6 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ReminderModule } from './reminder/reminder.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './users/entities/user.entity';
+import { MeetingReminder } from './meeting-reminders/entities/meeting-reminder.entity';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         type: 'postgres',
         url: config.get<string>('DATABASE_URL'),
         ssl: { rejectUnauthorized: false },
-        entities: [],
+        entities: [User, MeetingReminder],
         synchronize: false,
       }),
     }),
