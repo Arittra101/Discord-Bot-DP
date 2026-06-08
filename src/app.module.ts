@@ -12,6 +12,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { MeetingRemindersModule } from './meeting-reminders/meeting-reminders.module';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -38,13 +39,19 @@ import { MeetingRemindersModule } from './meeting-reminders/meeting-reminders.mo
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: config.get<string>('DATABASE_URL'),
-        ssl: { rejectUnauthorized: false },
-        entities: [User, MeetingReminder],
-        synchronize: false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const ext = __filename.endsWith('.ts') ? '.ts' : '.js';
+        return {
+          type: 'postgres',
+          url: config.get<string>('DATABASE_URL'),
+          ssl: { rejectUnauthorized: false },
+          entities: [User, MeetingReminder],
+          migrations: [join(__dirname, `migrations/*${ext}`)],
+          migrationsRun: false,
+          synchronize: false,
+          logging: ['error', 'warn'],
+        };
+      },
     }),
     DiscordModule,
     ReminderModule,
