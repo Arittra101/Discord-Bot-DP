@@ -7,18 +7,30 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiNoContentResponse,
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser, RequestUser } from './decorators/current-user.decorator';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login and receive a JWT' })
+  @ApiOkResponse({ schema: { example: { access_token: 'eyJ...' } } })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
@@ -26,6 +38,10 @@ export class AuthController {
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change the current user password' })
+  @ApiNoContentResponse({ description: 'Password changed successfully' })
+  @ApiUnauthorizedResponse({ description: 'Invalid or missing token' })
   changePassword(
     @CurrentUser() user: RequestUser,
     @Body() dto: ChangePasswordDto,
@@ -36,6 +52,15 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout (client must discard the token)' })
+  @ApiOkResponse({
+    schema: {
+      example: {
+        message: 'Logged out — discard your token on the client side.',
+      },
+    },
+  })
   logout() {
     return { message: 'Logged out — discard your token on the client side.' };
   }
