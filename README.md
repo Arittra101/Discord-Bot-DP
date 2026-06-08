@@ -1,98 +1,166 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Discord Meeting Reminder Bot
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-powered REST API that sends scheduled meeting reminders to a Discord channel. Users register and authenticate via JWT, create reminders through the API, and the bot posts an `@everyone` notification to Discord at the exact scheduled time — even across server restarts, thanks to Redis-backed job persistence.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## What it does
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Scheduled Discord alerts** — post a message to a Discord channel at any future date/time
+- **Two reminder systems**:
+  - **Static cron reminders** — hardcoded recurring messages defined in `src/remiders.config.ts` (e.g. daily stand-up pings)
+  - **Dynamic meeting reminders** — user-created one-off reminders via REST API, queued with BullMQ and persisted in Redis (Upstash)
+- **JWT authentication** — register, login, and manage reminders securely
+- **Role-based access** — `admin` role can create users; `user` role manages their own reminders
+- **Swagger UI** — interactive API docs at `http://localhost:3000/api`
 
-## Project setup
+---
 
-```bash
-$ npm install
-```
+## Tech Stack
 
-## Compile and run the project
+| Layer | Technology |
+|---|---|
+| Framework | NestJS (TypeScript) |
+| Database | PostgreSQL via [Neon](https://neon.tech) |
+| ORM | TypeORM (migrations, no synchronize) |
+| Job Queue | BullMQ + Redis via [Upstash](https://upstash.com) |
+| Discord | discord.js |
+| Auth | JWT (passport-jwt) |
+| Cron | @nestjs/schedule |
+| API Docs | @nestjs/swagger |
+| Deployment | [Railway](https://railway.app) |
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## Features
 
-# production mode
-$ npm run start:prod
-```
+- `POST /reminders` — schedule a reminder with a title, content, and UTC datetime
+- `GET /reminders?view=upcoming|past|current` — list your reminders filtered by status
+- `PATCH /reminders/:id` — update a reminder (only if not yet sent)
+- `DELETE /reminders/:id` — cancel a reminder (only if not yet sent)
+- Reminders survive server restarts (jobs are persisted in Upstash Redis)
+- `@everyone` ping sent to the configured Discord channel when a reminder fires
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+## Prerequisites
 
-# e2e tests
-$ npm run test:e2e
+- Node.js 18+
+- A Discord bot token and a target channel ID
+- A PostgreSQL database (e.g. Neon free tier)
+- A Redis instance (e.g. Upstash free tier, `rediss://` TLS URL)
 
-# test coverage
-$ npm run test:cov
-```
+---
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Setup
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# 1. Install dependencies
+npm install
+
+# 2. Create the environment file
+cp src/.env.example src/.env
+# Fill in all variables (see below)
+
+# 3. Run database migrations
+npm run migration:run
+
+# 4. Start in development (watch mode)
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Swagger UI will be available at `http://localhost:3000/api`.
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+## Environment Variables
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Create `src/.env` with the following:
 
-## Support
+```env
+DISCORD_BOT_TOKEN=     # Bot token from Discord Developer Portal
+DISCORD_CHANNEL_ID=    # ID of the channel to post reminders in
+DATABASE_URL=          # Postgres connection string (e.g. Neon)
+JWT_SECRET=            # Secret key for signing JWTs
+JWT_EXPIRES_IN=8h      # Optional, defaults to 8h
+REDIS_URL=             # Upstash Redis URL (rediss://...)
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+> `src/.env` is gitignored and never committed. In production (Railway), inject these as environment variables directly in the dashboard.
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## API Endpoints
 
-## License
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/auth/register` | — | Create a new account |
+| POST | `/auth/login` | — | Login, returns JWT |
+| PATCH | `/auth/change-password` | JWT | Change your password |
+| POST | `/auth/logout` | JWT | Logout |
+| POST | `/users` | JWT + admin | Create a user (admin only) |
+| GET | `/users` | JWT | List all users |
+| GET | `/users/me` | JWT | Your profile |
+| POST | `/reminders` | JWT | Create a meeting reminder |
+| GET | `/reminders` | JWT | List reminders (`?view=upcoming\|past\|current`) |
+| GET | `/reminders/:id` | JWT | Get a single reminder |
+| PATCH | `/reminders/:id` | JWT | Update a reminder |
+| DELETE | `/reminders/:id` | JWT | Delete a reminder |
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+All datetime fields (`remindAt`) must be in **UTC ISO 8601** format, e.g. `"2026-06-08T19:05:00Z"`.
+
+---
+
+## Available Scripts
+
+```bash
+npm run start:dev        # Run in watch mode (development)
+npm run build            # Compile TypeScript
+npm run start:prod       # Run compiled output from dist/
+npm run test             # Unit tests
+npm run test:e2e         # End-to-end tests
+npm run lint             # ESLint with auto-fix
+npm run format           # Prettier format
+
+npm run migration:run    # Apply pending migrations
+npm run migration:revert # Revert last migration
+npm run migration:show   # List migration status
+```
+
+---
+
+## Deployment (Railway)
+
+1. Push this repo to GitHub
+2. Create a new project on [Railway](https://railway.app) and connect the repo
+3. Add all environment variables in the Railway dashboard
+4. Railway automatically runs `npm run build` then `npm run start:prod`
+
+External services (Neon Postgres + Upstash Redis) remain the same in production.
+
+---
+
+## How a Reminder Is Delivered
+
+```
+User calls POST /reminders
+        │
+        ▼
+ReminderProducer enqueues a BullMQ delayed job
+(delay = remindAt - now, persisted in Upstash Redis)
+        │
+        ▼  (at scheduled time)
+ReminderWorker processes the job
+        │
+        ▼
+DiscordService.sendMessage() posts @everyone to channel
+        │
+        ▼
+Reminder marked isSent: true in database
+```
+
+---
+
+## Author
+
+Built by [Arittra101](https://github.com/Arittra101)
