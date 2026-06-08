@@ -46,6 +46,7 @@ export class UsersService {
       passwordHash: await bcrypt.hash(dto.password, 10),
       discordId: dto.discordId,
       name: dto.name,
+      role: dto.role,
     });
 
     const saved = await this.userRepo.save(user);

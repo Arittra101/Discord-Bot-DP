@@ -43,7 +43,8 @@ export class ReminderWorker extends WorkerHost {
       return;
     }
 
-    const channelId = this.configService.getOrThrow<string>('DISCORD_CHANNEL_ID');
+    const channelId =
+      this.configService.getOrThrow<string>('DISCORD_CHANNEL_ID');
     const message =
       `@everyone ⏰ **Meeting Reminder**\n` +
       `📌 ${reminder.title}\n\n` +

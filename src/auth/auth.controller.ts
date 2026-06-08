@@ -10,14 +10,17 @@ import {
 import {
   ApiTags,
   ApiOperation,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiNoContentResponse,
   ApiBearerAuth,
   ApiUnauthorizedResponse,
+  ApiConflictResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser, RequestUser } from './decorators/current-user.decorator';
 
@@ -25,6 +28,16 @@ import { CurrentUser, RequestUser } from './decorators/current-user.decorator';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  @Post('register')
+  @ApiOperation({ summary: 'Create a new account' })
+  @ApiCreatedResponse({ description: 'Account created successfully' })
+  @ApiConflictResponse({
+    description: 'Email or Discord ID already registered',
+  })
+  register(@Body() dto: CreateUserDto) {
+    return this.authService.register(dto);
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
